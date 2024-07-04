@@ -1,14 +1,11 @@
-# Compiler files
-cache/
-out/
-
-# Ignores development broadcast logs
-!/broadcast
-/broadcast/*/31337/
-/broadcast/**/dry-run/
-
-# Docs
-docs/
-
-# Dotenv file
-.env
+artifacts
+forge-artifacts
+cache
+typechain
+coverage.out
+.deps
+broadcast
+genesis.json
+src/contract-artifacts.ts
+tmp-artifacts
+node_modules
