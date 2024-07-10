@@ -65,34 +65,4 @@ contract L2OutputOracleTest is L2OutputOracle_Initializer {
         vm.prank(proposer);
         oracle.proposeL2Output(proposedOutput2, nextBlockNumber, 0, 0);
     }
-
-    /**
-     *
-     * Delete Tests - Happy Path *
-     *
-     */
-
-    event OutputDeleted(bytes32 indexed l2Output, uint256 indexed l1Timestamp, uint256 indexed l2BlockNumber);
-
-    function test_deleteOutput() external {
-        test_proposingAnotherOutput();
-
-        uint256 latestBlockNumber = oracle.latestBlockNumber();
-        Types.OutputProposal memory proposalToDelete = oracle.getL2Output(latestBlockNumber);
-        Types.OutputProposal memory newLatestOutput = oracle.getL2Output(latestBlockNumber - submissionInterval);
-
-        vm.prank(owner);
-        vm.expectEmit(true, true, false, false);
-        emit OutputDeleted(proposalToDelete.outputRoot, proposalToDelete.timestamp, latestBlockNumber);
-        oracle.deleteL2Output(proposalToDelete);
-
-        // validate latestBlockNumber has been reduced
-        uint256 latestBlockNumberAfter = oracle.latestBlockNumber();
-        assertEq(latestBlockNumber - submissionInterval, latestBlockNumberAfter);
-
-        Types.OutputProposal memory proposal = oracle.getL2Output(latestBlockNumberAfter);
-        // validate that the new latest output is as expected.
-        assertEq(newLatestOutput.outputRoot, proposal.outputRoot);
-        assertEq(newLatestOutput.timestamp, proposal.timestamp);
-    }
 }

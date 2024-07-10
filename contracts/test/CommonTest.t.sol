@@ -3,26 +3,25 @@ pragma solidity 0.8.15;
 
 /* Testing utilities */
 import {Test} from "forge-std/Test.sol";
-import {L2OutputOracle} from "../L1/L2OutputOracle.sol";
-import {L2ToL1MessagePasser} from "../L2/L2ToL1MessagePasser.sol";
-import {L1StandardBridge} from "../L1/L1StandardBridge.sol";
-import {L2StandardBridge} from "../L2/L2StandardBridge.sol";
-import {OptimismMintableERC20Factory} from "../universal/OptimismMintableERC20Factory.sol";
-import {OptimismMintableERC20} from "../universal/OptimismMintableERC20.sol";
-import {OptimismPortal} from "../L1/OptimismPortal.sol";
-import {L1CrossDomainMessenger} from "../L1/L1CrossDomainMessenger.sol";
-import {L2CrossDomainMessenger} from "../L2/L2CrossDomainMessenger.sol";
-import {AddressAliasHelper} from "../vendor/AddressAliasHelper.sol";
-import {LegacyERC20ETH} from "../legacy/LegacyERC20ETH.sol";
-import {Predeploys} from "../libraries/Predeploys.sol";
-import {Types} from "../libraries/Types.sol";
+import {L2OutputOracle} from "contracts/L1/L2OutputOracle.sol";
+import {L2ToL1MessagePasser} from "contracts/L2/L2ToL1MessagePasser.sol";
+import {L1StandardBridge} from "contracts/L1/L1StandardBridge.sol";
+import {L2StandardBridge} from "contracts/L2/L2StandardBridge.sol";
+import {OptimismMintableERC20Factory} from "contracts/universal/OptimismMintableERC20Factory.sol";
+import {OptimismMintableERC20} from "contracts/universal/OptimismMintableERC20.sol";
+import {OptimismPortal} from "contracts/L1/OptimismPortal.sol";
+import {L1CrossDomainMessenger} from "contracts/L1/L1CrossDomainMessenger.sol";
+import {L2CrossDomainMessenger} from "contracts/L2/L2CrossDomainMessenger.sol";
+import {AddressAliasHelper} from "contracts/vendor/AddressAliasHelper.sol";
+import {Predeploys} from "contracts/libraries/Predeploys.sol";
+import {Types} from "contracts/libraries/Types.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {Proxy} from "../universal/Proxy.sol";
+import {Proxy} from "contracts/universal/Proxy.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {ResolvedDelegateProxy} from "../legacy/ResolvedDelegateProxy.sol";
-import {AddressManager} from "../legacy/AddressManager.sol";
-import {L1ChugSplashProxy} from "../legacy/L1ChugSplashProxy.sol";
-import {IL1ChugSplashDeployer} from "../legacy/L1ChugSplashProxy.sol";
+import {ResolvedDelegateProxy} from "contracts/legacy/ResolvedDelegateProxy.sol";
+import {AddressManager} from "contracts/legacy/AddressManager.sol";
+import {L1ChugSplashProxy} from "contracts/legacy/L1ChugSplashProxy.sol";
+import {IL1ChugSplashDeployer} from "contracts/legacy/L1ChugSplashProxy.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract CommonTest is Test {
@@ -61,8 +60,7 @@ contract CommonTest is Test {
 
 contract L2OutputOracle_Initializer is CommonTest {
     // Test target
-    L2OutputOracle oracle;
-    L2OutputOracle oracleImpl;
+    L2OutputOracle oracle = new L2OutputOracle();
 
     L2ToL1MessagePasser messagePasser = L2ToL1MessagePasser(payable(Predeploys.L2_TO_L1_MESSAGE_PASSER));
 
@@ -92,26 +90,7 @@ contract L2OutputOracle_Initializer is CommonTest {
         initL1Time = startingTimestamp + 1;
         vm.warp(initL1Time);
         vm.roll(startingBlockNumber);
-        // Deploy the L2OutputOracle and transfer owernship to the proposer
-        oracleImpl = new L2OutputOracle(
-            submissionInterval,
-            genesisL2Output,
-            historicalTotalBlocks,
-            startingBlockNumber,
-            startingTimestamp,
-            l2BlockTime,
-            proposer,
-            owner
-        );
-        Proxy proxy = new Proxy(multisig);
-        vm.prank(multisig);
-        proxy.upgradeToAndCall(
-            address(oracleImpl),
-            abi.encodeWithSelector(
-                L2OutputOracle.initialize.selector, genesisL2Output, startingBlockNumber, proposer, owner
-            )
-        );
-        oracle = L2OutputOracle(address(proxy));
+
         vm.label(address(oracle), "L2OutputOracle");
 
         // Set the L2ToL1MessagePasser at the correct address
@@ -161,7 +140,7 @@ contract Messenger_Initializer is L2OutputOracle_Initializer {
         super.setUp();
 
         // Deploy the OptimismPortal
-        op = new OptimismPortal(oracle, 7 days);
+        op = new OptimismPortal();
         vm.label(address(op), "OptimismPortal");
 
         // Deploy the address manager
@@ -169,7 +148,7 @@ contract Messenger_Initializer is L2OutputOracle_Initializer {
         addressManager = new AddressManager();
 
         // Setup implementation
-        L1CrossDomainMessenger L1MessengerImpl = new L1CrossDomainMessenger(op);
+        L1CrossDomainMessenger L1MessengerImpl = new L1CrossDomainMessenger();
 
         // Setup the address manager and proxy
         vm.prank(multisig);
@@ -179,17 +158,15 @@ contract Messenger_Initializer is L2OutputOracle_Initializer {
             "OVM_L1CrossDomainMessenger"
         );
         L1Messenger = L1CrossDomainMessenger(address(proxy));
-        L1Messenger.initialize();
 
-        vm.etch(Predeploys.L2_CROSS_DOMAIN_MESSENGER, address(new L2CrossDomainMessenger(address(L1Messenger))).code);
+        vm.etch(Predeploys.L2_CROSS_DOMAIN_MESSENGER, address(new L2CrossDomainMessenger()).code);
 
-        L2Messenger.initialize();
+        L2Messenger.initialize(L1Messenger);
 
         // Label addresses
         vm.label(address(addressManager), "AddressManager");
         vm.label(address(L1MessengerImpl), "L1CrossDomainMessenger_Impl");
         vm.label(address(L1Messenger), "L1CrossDomainMessenger_Proxy");
-        vm.label(Predeploys.LEGACY_ERC20_ETH, "LegacyERC20ETH");
         vm.label(Predeploys.L2_CROSS_DOMAIN_MESSENGER, "L2CrossDomainMessenger");
 
         vm.label(AddressAliasHelper.applyL1ToL2Alias(address(L1Messenger)), "L1CrossDomainMessenger_aliased");
@@ -274,7 +251,7 @@ contract Bridge_Initializer is Messenger_Initializer {
         L1ChugSplashProxy proxy = new L1ChugSplashProxy(multisig);
         vm.mockCall(multisig, abi.encodeWithSelector(IL1ChugSplashDeployer.isUpgrading.selector), abi.encode(true));
         vm.startPrank(multisig);
-        proxy.setCode(address(new L1StandardBridge(payable(address(L1Messenger)))).code);
+        proxy.setCode(address(new L1StandardBridge()).code);
         vm.clearMockedCalls();
         address L1Bridge_Impl = proxy.getImplementation();
         vm.stopPrank();
@@ -286,18 +263,14 @@ contract Bridge_Initializer is Messenger_Initializer {
 
         // Deploy the L2StandardBridge, move it to the correct predeploy
         // address and then initialize it
-        L2StandardBridge l2B = new L2StandardBridge(payable(proxy));
+        L2StandardBridge l2B = new L2StandardBridge();
         vm.etch(Predeploys.L2_STANDARD_BRIDGE, address(l2B).code);
         L2Bridge = L2StandardBridge(payable(Predeploys.L2_STANDARD_BRIDGE));
 
         // Set up the L2 mintable token factory
-        OptimismMintableERC20Factory factory = new OptimismMintableERC20Factory(
-            Predeploys.L2_STANDARD_BRIDGE
-        );
+        OptimismMintableERC20Factory factory = new OptimismMintableERC20Factory();
         vm.etch(Predeploys.OPTIMISM_MINTABLE_ERC20_FACTORY, address(factory).code);
         L2TokenFactory = OptimismMintableERC20Factory(Predeploys.OPTIMISM_MINTABLE_ERC20_FACTORY);
-
-        vm.etch(Predeploys.LEGACY_ERC20_ETH, address(new LegacyERC20ETH()).code);
 
         L1Token = new ERC20("Native L1 Token", "L1T");
 
@@ -319,7 +292,7 @@ contract Bridge_Initializer is Messenger_Initializer {
         );
 
         NativeL2Token = new ERC20("Native L2 Token", "L2T");
-        L1TokenFactory = new OptimismMintableERC20Factory(address(L1Bridge));
+        L1TokenFactory = new OptimismMintableERC20Factory();
 
         RemoteL1Token = OptimismMintableERC20(
             L1TokenFactory.createStandardL2Token(

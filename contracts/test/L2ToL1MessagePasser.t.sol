@@ -33,7 +33,7 @@ contract L2ToL1MessagePasserTest is CommonTest {
         uint256 _gasLimit,
         bytes memory _data
     ) external {
-        uint256 nonce = messagePasser.nonce();
+        uint256 nonce = messagePasser.msgNonce();
 
         vm.expectEmit(true, true, true, true);
         emit WithdrawalInitiated(nonce, _sender, _target, _value, _gasLimit, _data);

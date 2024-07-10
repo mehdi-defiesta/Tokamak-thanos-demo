@@ -33,7 +33,7 @@ contract L2CrossDomainMessenger_Test is Messenger_Initializer {
         // WithdrawalInitiated event
         vm.expectEmit(true, true, true, true);
         emit WithdrawalInitiated(
-            messagePasser.nonce(),
+            messagePasser.msgNonce(),
             address(L2Messenger),
             address(L1Messenger),
             0,
@@ -72,7 +72,5 @@ contract L2CrossDomainMessenger_Test is Messenger_Initializer {
 
         // the message hash is in the successfulMessages mapping
         assert(L2Messenger.successfulMessages(hash));
-        // it is not in the received messages mapping
-        assertEq(L2Messenger.receivedMessages(hash), false);
     }
 }

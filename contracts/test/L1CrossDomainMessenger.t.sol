@@ -97,8 +97,6 @@ contract L1CrossDomainMessenger_Test is Messenger_Initializer {
 
         // the message hash is in the successfulMessages mapping
         assert(L1Messenger.successfulMessages(hash));
-        // it is not in the received messages mapping
-        assertEq(L1Messenger.receivedMessages(hash), false);
     }
 
     // relayMessage: should revert if eth is sent from a contract other than the standard bridge
