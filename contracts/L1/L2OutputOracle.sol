@@ -61,17 +61,7 @@ contract L2OutputOracle is Initializable, ISemver {
 
     /// @notice Constructs the L2OutputOracle contract. Initializes variables to the same values as
     ///         in the getting-started config.
-    constructor() {
-        initialize({
-            _submissionInterval: 1,
-            _l2BlockTime: 1,
-            _startingBlockNumber: 0,
-            _startingTimestamp: 0,
-            _proposer: address(0),
-            _challenger: address(0),
-            _finalizationPeriodSeconds: 0
-        });
-    }
+    constructor() {}
 
     /// @notice Initializer.
     /// @param _submissionInterval  Interval in blocks at which checkpoints must be submitted.

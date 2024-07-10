@@ -116,32 +116,6 @@ contract SystemConfig is OwnableUpgradeable, ISemver {
     ///         in the singleton and is skipped by initialize when setting the start block.
     constructor() {
         Storage.setUint(START_BLOCK_SLOT, type(uint256).max);
-        initialize({
-            _owner: address(0xdEaD),
-            _overhead: 0,
-            _scalar: 0,
-            _batcherHash: bytes32(0),
-            _gasLimit: 1,
-            _unsafeBlockSigner: address(0),
-            _config: ResourceMetering.ResourceConfig({
-                maxResourceLimit: 1,
-                elasticityMultiplier: 1,
-                baseFeeMaxChangeDenominator: 2,
-                minimumBaseFee: 0,
-                systemTxMaxGas: 0,
-                maximumBaseFee: 0
-            }),
-            _batchInbox: address(0),
-            _addresses: SystemConfig.Addresses({
-                l1CrossDomainMessenger: address(0),
-                l1ERC721Bridge: address(0),
-                l1StandardBridge: address(0),
-                l2OutputOracle: address(0),
-                optimismPortal: address(0),
-                optimismMintableERC20Factory: address(0),
-                nativeTokenAddress: address(0)
-            })
-        });
     }
 
     /// @notice Initializer.
@@ -199,6 +173,12 @@ contract SystemConfig is OwnableUpgradeable, ISemver {
     /// @return uint64 Minimum gas limit.
     function minimumGasLimit() public view returns (uint64) {
         return uint64(_resourceConfig.maxResourceLimit) + uint64(_resourceConfig.systemTxMaxGas);
+    }
+
+    /// @notice Setter for the native token address. Can only be called by the owner.
+    /// @param _nativeTokenAddress New native token address.
+    function setNativeTokenAddress(address _nativeTokenAddress) external {
+        Storage.setAddress(NATIVE_TOKEN_ADDRESS_SLOT, _nativeTokenAddress);
     }
 
     /// @notice High level getter for the unsafe block signer address.

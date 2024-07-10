@@ -42,13 +42,7 @@ contract L1CrossDomainMessenger is CrossDomainMessenger, OnApprove, ISemver {
     string public constant version = "2.3.0";
 
     /// @notice Constructs the L1CrossDomainMessenger contract.
-    constructor() CrossDomainMessenger() {
-        initialize({
-            _superchainConfig: SuperchainConfig(address(0)),
-            _portal: OptimismPortal(payable(0)),
-            _systemConfig: SystemConfig(address(0))
-        });
-    }
+    constructor() CrossDomainMessenger() {}
 
     /// @notice Initializes the contract.
     /// @param _superchainConfig Contract of the SuperchainConfig contract on this network.
